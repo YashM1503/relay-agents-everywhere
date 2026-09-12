@@ -6,9 +6,25 @@ RELAY helps people finish real-world tasks — clinic registration, forms, docum
 
 Built for **AI Tinkerers — Agents Everywhere**.
 
-**Live demo:** [relay-assist on Replit](https://relay-assist--yashmishra1904.replit.app/) · **iPhone:** Capacitor shell → same hosted backend ([setup](./IOS_DEMO_SETUP.md))
-
 > *You should not have to leave the real world to use AI.*
+
+---
+
+## Try it
+
+| Platform | Link / command |
+|----------|----------------|
+| **Web (Replit)** | **[relay-assist--yashmishra1904.replit.app](https://relay-assist--yashmishra1904.replit.app/)** |
+| **iPhone (Capacitor)** | `npm run ios:replit` → open in Xcode → run on device |
+| **Local dev** | `npm install && npm run dev` → [localhost:3000](http://localhost:3000) |
+
+The iPhone app is a native shell (WebView) that loads the **hosted** Next.js backend — API keys stay on the server (Replit Secrets), never in the iOS binary.
+
+```
+Browser / iPhone  ──HTTPS──►  Replit (Next.js + agents + COUNTERSIGN)
+```
+
+Guides: [REPLIT.md](./REPLIT.md) · [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md) · [DEPLOYMENT.md](./DEPLOYMENT.md)
 
 ---
 
@@ -52,9 +68,12 @@ bash scripts/runtime-integration.sh   # full API path (dev server must be runnin
 
 ### iPhone demo (Capacitor)
 
-**Replit backend (recommended):** no Mac server — `npm run ios:replit` then open Xcode.
+```bash
+npm run ios:replit      # sync shell → Replit backend (recommended)
+npm run cap:open:ios    # build & run on iPhone from Xcode
+```
 
-**Local backend:** host Next.js on your Mac, sync to LAN IP. See [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md) · [REPLIT.md](./REPLIT.md).
+Local Mac backend: see [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md).
 
 ### Production deploy
 
@@ -79,6 +98,8 @@ Full guide: [DEPLOYMENT.md](./DEPLOYMENT.md)
 | `demo-data/` | Synthetic clinic fixtures |
 | `docs/` | Specs, runbooks, architecture |
 | `ios/` | Capacitor iPhone shell |
+| `.replit` | Replit deploy config |
+| `REPLIT.md` | Hosted backend + iOS sync guide |
 
 Full documentation: [`/docs`](./docs) · Demo fixtures: [`/demo-data`](./demo-data)
 
