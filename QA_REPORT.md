@@ -84,3 +84,30 @@ Run gate: `./scripts/run-demo-check.sh` or `npm test`
 1. Tighten `observeSession` to validate QR value against allowlisted clinic domain/form_id before setting `destination_verified`.
 2. Add `POST /api/actions/:id/cancel` or clear `pendingProposal` when user cancels COUNTERSIGN card.
 3. Re-run `./scripts/run-demo-check.sh` after fixes; target 67/67 green.
+
+---
+
+## Full sweep — 2026-09-12 (post iOS tooling)
+
+| Gate | Result | Notes |
+|------|--------|-------|
+| `npm test` | **PASS** | 70/70 (6 files) |
+| `npm run typecheck` | **PASS** | |
+| `npm run build` | **PASS** | Includes `/api/health` |
+| `scripts/runtime-integration.sh` | **PASS** | Full clinic path after dev warm-up |
+| Edge HTTP checks | **PASS** | 404 on bad session, untrusted QR held, execute-without-confirm blocked, health OK |
+| `npm run ios:verify-secrets` | **PASS** | No keys in `ios/` |
+| `npm run ios:preflight` | **WARN** | Tunnel in `.env.local` was down; local `127.0.0.1:3000` OK when exported |
+| Live providers | **WARN** | `OPENAI_API_KEY` / `OPENROUTER_API_KEY` empty in `.env.local` — routes to `local-fallback` |
+
+### Known dev-environment flakes
+
+- **Stale `.next` after `npm run build` while dev is running** → `GET /` 500 (`Cannot find module './331.js'`). Fix: restart dev after build or `rm -rf .next`.
+- **Cold-start route compilation** → first `runtime-integration.sh` run may fail on early steps; re-run after warm-up passes.
+- **In-memory sessions** → dev-only; production would need external store.
+
+### Not tested in this sweep
+
+- Physical iPhone Xcode run (manual)
+- Live OpenAI/OpenRouter calls (keys not configured in env)
+- HTTPS tunnel (`lhr.life`) — was unreachable during sweep

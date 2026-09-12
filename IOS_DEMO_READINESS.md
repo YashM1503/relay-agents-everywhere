@@ -43,7 +43,10 @@
 
 | Command | Result |
 |---------|--------|
-| `npm test` | **67+ tests PASS** (includes OpenRouter adapter tests) |
+| `npm test` | **70 tests PASS** (includes OpenRouter adapter tests) |
+| `npm run ios:preflight` | Checks providers, backend URL, tunnel/LAN |
+| `npm run ios:demo` | Full preflight + cap sync + secret scan |
+| `GET /api/health` | Provider availability (server-side keys only) |
 | `npm run typecheck` | **PASS** |
 | `npm run build` | **PASS** |
 | `npx cap sync ios` | **PASS** |

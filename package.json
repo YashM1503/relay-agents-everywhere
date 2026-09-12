@@ -15,6 +15,9 @@
     "cap:sync": "cap sync",
     "cap:sync:ios": "cap sync ios",
     "cap:open:ios": "cap open ios",
+    "ios:demo": "bash scripts/ios-demo.sh",
+    "ios:preflight": "bash scripts/ios-demo.sh preflight",
+    "ios:sync": "bash scripts/ios-demo.sh sync",
     "ios:verify-secrets": "bash scripts/verify-ios-no-secrets.sh"
   },
   "dependencies": {

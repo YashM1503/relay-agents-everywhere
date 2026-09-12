@@ -14,7 +14,7 @@ No API keys belong in the iOS binary.
 - Apple ID with a **free or paid development team** (for device signing)
 - iPhone + USB cable
 - Node.js 18+ (already used for RELAY)
-- RELAY repo at commit `30f5167` or later with `ios/` present
+- RELAY repo with `ios/` present (main branch, Capacitor shell merged)
 
 > **Note:** This project uses Capacitor **SPM** (Swift Package Manager). CocoaPods is not required.
 
@@ -79,18 +79,40 @@ Leave this terminal running during the demo.
 
 ## 5. Sync Capacitor iOS shell
 
+Full preflight (providers, backend ping, sync, secret scan):
+
 ```bash
-./scripts/cap-sync-ios.sh
+npm run ios:demo
 ```
 
-Or manually:
+Sync only:
 
 ```bash
-export CAPACITOR_SERVER_URL=http://192.168.1.42:3000
-npm run cap:sync:ios
+npm run ios:sync
+# or: ./scripts/cap-sync-ios.sh
+```
+
+Preflight without sync:
+
+```bash
+npm run ios:preflight
 ```
 
 This copies `capacitor-web/` assets and writes `ios/App/App/capacitor.config.json` with your backend URL.
+
+**Backend URL options:**
+
+| URL type | Example | Physical iPhone |
+|----------|---------|-----------------|
+| HTTPS tunnel | `https://xxxx.lhr.life` | ✓ Works anywhere |
+| LAN IP | `http://192.168.x.x:3000` | ✓ Same Wi‑Fi as Mac |
+| localhost | `http://localhost:3000` | Simulator only |
+
+Check provider status while the server is running:
+
+```bash
+curl -s "$CAPACITOR_SERVER_URL/api/health" | python3 -m json.tool
+```
 
 ---
 
