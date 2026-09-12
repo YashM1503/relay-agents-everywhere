@@ -1,0 +1,175 @@
+@import "tailwindcss";
+
+/* RELAY design tokens — reconciled from integration package (paper / charcoal / sage) */
+:root {
+  --paper: #f7f6f2;
+  --white: #fdfcfa;
+  --ink: #272a26;
+  --muted: #686b62;
+  --line: #dddfd5;
+  --dark: #252a25;
+  --olive: #657255;
+  --sage: #e9ece2;
+  --error: #90442d;
+  --warning: #b45309;
+  --success: #657255;
+  --focus: #8b643d;
+  --radius: 16px;
+  --radius-control: 8px;
+  --font-sans: Arial, Helvetica, sans-serif;
+  --font-serif: Georgia, "Times New Roman", serif;
+  --body: 18px;
+  --relay-tap-min: 48px;
+
+  /* Legacy aliases used by components */
+  --relay-bg: var(--paper);
+  --relay-surface: var(--white);
+  --relay-primary: var(--dark);
+  --relay-primary-hover: #1a1e1a;
+  --relay-accent: var(--sage);
+  --relay-text: var(--ink);
+  --relay-text-muted: var(--muted);
+  --relay-border: var(--line);
+  --relay-danger: var(--error);
+  --relay-warning: var(--warning);
+  --relay-success: var(--success);
+  --relay-active: var(--focus);
+  --relay-olive: var(--olive);
+}
+
+@theme inline {
+  --color-relay-bg: var(--relay-bg);
+  --color-relay-surface: var(--relay-surface);
+  --color-relay-primary: var(--relay-primary);
+  --color-relay-primary-hover: var(--relay-primary-hover);
+  --color-relay-accent: var(--relay-accent);
+  --color-relay-text: var(--relay-text);
+  --color-relay-text-muted: var(--relay-text-muted);
+  --color-relay-border: var(--relay-border);
+  --color-relay-danger: var(--relay-danger);
+  --color-relay-warning: var(--relay-warning);
+  --color-relay-success: var(--relay-success);
+  --color-relay-active: var(--relay-active);
+  --color-relay-olive: var(--relay-olive);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font: var(--body) / 1.55 var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--font-serif);
+  font-weight: 400;
+}
+
+h1 {
+  font-size: clamp(2rem, 4.1vw, 3.625rem);
+  letter-spacing: -0.04em;
+  line-height: 1.12;
+}
+
+h2 {
+  font-size: 1.875rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.relay-page-head {
+  margin-bottom: 1.5rem;
+}
+
+.relay-eyebrow {
+  font: 0.875rem var(--font-sans);
+  color: var(--olive);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.relay-support {
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.relay-notice {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  border-radius: var(--radius-control);
+  padding: 1rem;
+  font-size: 1rem;
+}
+
+.relay-notice-error {
+  background: #fdf5f2;
+  border: 1px solid #e8c4b8;
+  color: var(--error);
+}
+
+.relay-notice-warning {
+  background: #fdfaf2;
+  border: 1px solid #e8ddb8;
+  color: var(--warning);
+}
+
+.relay-notice-offline {
+  background: var(--sage);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.relay-btn-primary {
+  min-height: var(--relay-tap-min);
+  border-radius: var(--radius-control);
+  background: var(--dark);
+  color: white;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+}
+
+.relay-btn-primary:hover {
+  background: var(--relay-primary-hover);
+}
+
+.relay-btn-primary:focus-visible,
+.relay-btn-secondary:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 4px;
+}
+
+.relay-btn-secondary {
+  min-height: var(--relay-tap-min);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--line);
+  background: var(--white);
+  color: var(--ink);
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+}
+
+.relay-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
