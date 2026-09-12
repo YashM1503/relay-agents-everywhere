@@ -36,31 +36,42 @@ const openAiResultSchema = z.object({
       z.object({
         key: z.string(),
         value: z.string(),
-        confidence: z.number().min(0).max(1).nullable().optional(),
+        confidence: z.number().min(0).max(1).nullable(),
       }),
-    )
-    .default([]),
+    ),
   artifacts: z
     .array(
       z.object({
         type: z.string(),
         ref: z.string(),
-        label: z.string().nullable().optional(),
+        label: z.string().nullable(),
       }),
-    )
-    .default([]),
+    ),
   proposedActions: z
     .array(
       z.object({
         actionId: z.string(),
         actionType: z.string(),
         description: z.string(),
-        tier: z.number().nullable().optional(),
+        tier: z.number().nullable(),
       }),
-    )
-    .default([]),
-  confidence: z.number().min(0).max(1).nullable().optional(),
+    ),
+  confidence: z.number().min(0).max(1).nullable(),
 });
+
+/** Providers on the json_object path may omit optional arrays; fill them before validating. */
+function withDefaults(data: unknown): unknown {
+  if (!data || typeof data !== "object") return data;
+  const o = data as Record<string, unknown>;
+  const arr = (v: unknown) => (Array.isArray(v) ? v.map((x) => (x && typeof x === "object" ? { confidence: null, label: null, tier: null, ...(x as object) } : x)) : []);
+  return {
+    confidence: null,
+    ...o,
+    findings: arr(o.findings),
+    artifacts: arr(o.artifacts),
+    proposedActions: arr(o.proposedActions ?? o.proposed_actions),
+  };
+}
 
 export interface ProviderConfig {
   apiKey?: string;
@@ -105,6 +116,7 @@ export function resolveProvider(env: EnvMap = process.env): ProviderConfig {
 
 const AUTH_BACKOFF_MS = 5 * 60_000;
 const DEFAULT_TIMEOUT_MS = 20_000;
+const RATE_LIMIT_RETRY_MS = 1_500;
 
 function buildSystemPrompt(context: RelayContext): string {
   return [
@@ -158,6 +170,22 @@ export function createOpenAiAdapter(
   }
 
   async function complete(
+    c: ChatClient,
+    cfg: ProviderConfig,
+    messages: unknown[],
+    timeout: number,
+  ): Promise<{ content: string | null; refusal?: string | null }> {
+    try {
+      return await completeOnce(c, cfg, messages, timeout);
+    } catch (err) {
+      // Free tiers rate-limit per minute; one short retry recovers most 429s without hiding outages.
+      if (statusOf(err) !== 429) throw err;
+      await new Promise((r) => setTimeout(r, RATE_LIMIT_RETRY_MS));
+      return completeOnce(c, cfg, messages, timeout);
+    }
+  }
+
+  async function completeOnce(
     c: ChatClient,
     cfg: ProviderConfig,
     messages: unknown[],
@@ -244,7 +272,7 @@ export function createOpenAiAdapter(
         } catch {
           return normalize({ status: "failed", summary: "Model returned non-JSON output." });
         }
-        const parsed = openAiResultSchema.safeParse(data);
+        const parsed = openAiResultSchema.safeParse(withDefaults(data));
         lastError = undefined;
         return parsed.success
           ? normalize(parsed.data)

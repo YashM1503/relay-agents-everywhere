@@ -60,6 +60,6 @@ Architecture frozen. No Python/SQLite adoption. Hero path only.
 | Server-side cancel of pending proposal | **PASS** | `POST /api/actions/:id/cancel`, wired to the COUNTERSIGN "Not yet" flow (QA case 11 closed) |
 | HOLD / DENY not overridable by Submit | **PASS** | `executeAction` refuses while proof obligations are unmet |
 | Agent execution with fallback + timeouts | **PASS** | `runWithFallback`; router decisions are now acted on |
-| Provider-agnostic adapter (OpenAI / OpenRouter / Ollama) | **PASS (unit)** | Live call unverified until a key is available |
-| Live card OCR (`RELAY_LIVE_VISION=true`) | **PASS (unit)** | Off by default; name mismatch → contradiction → hold |
+| Provider-agnostic adapter (OpenAI / OpenRouter / Ollama) | **PASS** | Verified live against OpenAI gpt-4o-mini and OpenRouter gemma-4-31b-it:free (one 429 retry added) |
+| Live card OCR (`RELAY_LIVE_VISION=true`) | **PASS** | Verified live on rendered cards; name mismatch → contradiction → hold even after confirm. Off by default |
 | Shared payment message left untouched | **PASS** | `observe` with `type: "message"` |

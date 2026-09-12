@@ -51,6 +51,7 @@ export function resolveProvider(env: NodeJS.ProcessEnv = process.env): ProviderC
 }
 
 const AUTH_BACKOFF_MS = 5 * 60_000;
+const RATE_LIMIT_RETRY_MS = 1_500;
 
 export function createOpenAIAdapter(cfg: ProviderConfig = resolveProvider(), injected?: ChatClient): AgentAdapter {
   let lastError: string | undefined;
@@ -60,6 +61,17 @@ export function createOpenAIAdapter(cfg: ProviderConfig = resolveProvider(), inj
   const id = "openai-default";
 
   async function complete(messages: unknown[], schemaName: string, json: Record<string, unknown>, timeout: number): Promise<string> {
+    try {
+      return await completeOnce(messages, schemaName, json, timeout);
+    } catch (err) {
+      // Free tiers rate-limit per minute; one short retry recovers most 429s without hiding real outages.
+      if (statusOf(err) !== 429) throw err;
+      await new Promise((r) => setTimeout(r, RATE_LIMIT_RETRY_MS));
+      return completeOnce(messages, schemaName, json, timeout);
+    }
+  }
+
+  async function completeOnce(messages: unknown[], schemaName: string, json: Record<string, unknown>, timeout: number): Promise<string> {
     if (!client) throw new Error("no client");
     const params = { model: cfg.model, messages, temperature: 0 };
     try {
