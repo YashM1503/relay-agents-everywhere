@@ -1,4 +1,5 @@
 export { openAiAdapter } from "./openai";
+export { openRouterAdapter, selectOpenRouterModel } from "./openrouter";
 export { hermesAdapter } from "./hermes";
 export { oriAdapter } from "./ori";
 export { paceAdapter } from "./pace";

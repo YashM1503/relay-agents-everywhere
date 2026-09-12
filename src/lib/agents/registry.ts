@@ -3,6 +3,7 @@ import {
   hermesAdapter,
   localFallbackAdapter,
   openAiAdapter,
+  openRouterAdapter,
   oriAdapter,
   paceAdapter,
 } from "./adapters";
@@ -10,6 +11,7 @@ import type { AgentAdapter, AgentRegistryEntry } from "./types";
 
 const ADAPTER_MAP: Record<string, AgentAdapter> = {
   "openai-default": openAiAdapter,
+  "openrouter-default": openRouterAdapter,
   hermes: hermesAdapter,
   ori: oriAdapter,
   pace: paceAdapter,

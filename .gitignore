@@ -55,3 +55,9 @@ pnpm-debug.log*
 # Coverage / test output
 coverage/
 .nyc_output/
+
+# Capacitor / Xcode local artifacts (ios/ project is committed)
+ios/App/Pods/
+ios/DerivedData/
+*.xcuserstate
+*.xcuserdata/
