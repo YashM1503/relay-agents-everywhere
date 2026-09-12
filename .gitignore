@@ -64,3 +64,6 @@ ios/App/Pods/
 ios/DerivedData/
 *.xcuserstate
 *.xcuserdata/
+
+# TypeScript incremental build info
+*.tsbuildinfo

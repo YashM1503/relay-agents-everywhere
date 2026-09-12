@@ -1,40 +1,85 @@
 # RELAY
 
-RELAY turns the phone someone already carries into an accessibility agent for the world around them.
+**Turn the phone you already carry into an agent for the world around you.**
 
-It can use voice, camera, documents, apps and eventually connected devices to understand what the user is trying to accomplish, route the task to the appropriate agent, and help complete it while keeping the user in control.
+RELAY helps people finish real-world tasks — clinic registration, forms, documents, appointments — without stopping life to fight with apps and interfaces. Voice, camera, and context flow through one calm experience. Every sensitive step passes through **COUNTERSIGN**: nothing is shared or submitted until the user explicitly approves.
 
-## Hackathon
+Built for **AI Tinkerers — Agents Everywhere**.
 
-Built for AI Tinkerers — Agents Everywhere.
+> *You should not have to leave the real world to use AI.*
 
-### Principle
+---
 
-The user should not have to stop interacting with the real world to interact with AI.
+## The idea
 
-### Architecture
+Most AI lives in chat windows. RELAY lives where the user already is — at a front desk, in a parking lot, reading a letter. It reads the moment, routes work to the right specialist agent, fills gaps one question at a time, and returns a clear receipt when the job is done.
 
-Environment / User
-→ RELAY Context Layer
-→ Agent Router
-→ Specialist Agent
-→ COUNTERSIGN
-→ Action
-→ Outcome / Receipt
+The user stays in control the entire way.
 
-## Team workflow
+---
 
-- Builder A: frontend / mobile experience / voice / camera
-- Builder B: runtime / agents / routing / COUNTERSIGN / integrations
-- Business Lead: user scenario / business case / demo data / presentation
+## How it works
 
-## Documentation
+```
+You  →  RELAY  →  Agent router  →  Specialist  →  COUNTERSIGN  →  Action  →  Receipt
+```
 
-See `/docs`.
+1. **Observe** — QR, camera, or voice captures context
+2. **Assist** — guided questions and document capture
+3. **Confirm** — COUNTERSIGN shows exactly what will be shared
+4. **Execute** — action runs only after approval
+5. **Receipt** — confirmation code and audit trail
 
-## Demo data
+---
 
-Synthetic data only. See `/demo-data`.
+## Quick start
+
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) and tap **Stay with me** for the clinic registration demo.
+
+```bash
+npm test                              # unit + integration tests
+npm run typecheck
+bash scripts/runtime-integration.sh   # full API path (dev server must be running)
+```
+
+### iPhone demo (Capacitor)
+
+Host Next.js on your Mac, sync the shell to your LAN IP, and run from Xcode.
+See [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md).
+
+---
+
+## What's in the repo
+
+| Path | Role |
+|------|------|
+| `src/app/` | Next.js UI and API |
+| `src/lib/session/` | Session state machine |
+| `src/lib/countersign/` | T0–T3 approval policy |
+| `src/lib/agents/` | Router and model adapters |
+| `demo-data/` | Synthetic clinic fixtures |
+| `docs/` | Specs, runbooks, architecture |
+| `ios/` | Capacitor iPhone shell |
+
+Full documentation: [`/docs`](./docs) · Demo fixtures: [`/demo-data`](./demo-data)
+
+---
+
+## Team
+
+| Role | Focus |
+|------|-------|
+| Builder A | Experience, mobile, voice, camera |
+| Builder B | Runtime, agents, routing, COUNTERSIGN |
+| Business | Scenario, demo data, presentation |
+
+---
 
 ## Runtime services (Builder 2)
 
@@ -58,3 +103,11 @@ Built during the hackathon window on top of the Next.js app:
   tiers; useful for the voice path and for testing without the UI. See `runtime/README.md`.
 
 Provider setup is documented in `.env.example`. Without any key the whole demo runs deterministically.
+
+## License & community
+
+Licensed under the [Apache License 2.0](./LICENSE).
+
+- [Code of Conduct](./CODE_OF_CONDUCT.md)
+- [Contributing](./CONTRIBUTING.md)
+- [Security](./SECURITY.md)
