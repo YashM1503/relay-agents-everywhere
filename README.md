@@ -42,9 +42,10 @@ Built during the hackathon window on top of the Next.js app:
 
 - **Agent execution with fallback** (`src/lib/agents/execute.ts`): the router now runs the agent it
   picks, with per-call timeouts and ordered fallback to `local-fallback`. Nothing throws into the flow.
-- **Provider-agnostic live adapter** (`src/lib/agents/adapters/openai.ts`): OpenAI, OpenRouter (free
-  vision models), Ollama or a sponsor gateway via `OPENAI_BASE_URL` / `RELAY_MODEL`; image
-  attachments; structured JSON with a `json_object` retry; auth backoff after a 401.
+- **Hardened live adapters** (`src/lib/agents/adapters/structured-completion.ts`, shared by the
+  OpenAI and OpenRouter adapters): image attachments, strict JSON schema with a `json_object` retry
+  for providers that reject it, per-call timeouts, one retry on 429, auth backoff after a 401, and
+  `OPENAI_BASE_URL` for Ollama or a sponsor gateway. Config is read per call.
 - **Live insurance-card reading** (`RELAY_LIVE_VISION=true`): the captured photo is read by the routed
   vision agent instead of the synthetic card. A card name that differs from the profile is recorded
   as a contradiction and COUNTERSIGN holds. Off by default so the demo stays deterministic.

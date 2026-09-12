@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createOpenAiAdapter, resolveProvider, type ChatClient } from "@/lib/agents/adapters/openai";
+import { createOpenAiAdapter, resolveProvider, selectOpenAiModel, type ChatClient } from "@/lib/agents/adapters/openai";
 import { runWithFallback } from "@/lib/agents/execute";
 import { normalize } from "@/lib/agents/normalize";
 import type { AgentAdapter, AgentRequest, RelayContext, RoutingDecision } from "@/lib/agents/types";
@@ -141,12 +141,15 @@ describe("openai adapter (Builder 2)", () => {
     expect(b.lastError()).not.toContain("test");
   });
 
-  it("resolves the provider from the environment: OpenAI, OpenRouter, or a custom base URL", () => {
+  it("resolves the provider from the environment and picks the vision model for image tasks", () => {
     expect(resolveProvider({ OPENAI_API_KEY: "k" }).label).toBe("api.openai.com");
-    const or = resolveProvider({ OPENROUTER_API_KEY: "k", RELAY_MODEL: "google/gemma-4-31b-it:free" });
-    expect(or.label).toBe("openrouter.ai");
-    expect(or.model).toBe("google/gemma-4-31b-it:free");
+    expect(resolveProvider({ OPENAI_API_KEY: "k" }).model).toBe("gpt-4o-mini");
+    expect(resolveProvider({ OPENAI_API_KEY: "k", OPENAI_MODEL_GENERAL: "gpt-4.1-mini" }).model).toBe("gpt-4.1-mini");
     expect(resolveProvider({ OPENAI_API_KEY: "ollama", OPENAI_BASE_URL: "http://localhost:11434/v1" }).label).toBe("localhost:11434");
     expect(resolveProvider({}).apiKey).toBeUndefined();
+    const cfg = resolveProvider({ OPENAI_API_KEY: "k", OPENAI_MODEL_VISION: "gpt-4o" });
+    expect(selectOpenAiModel(req, cfg)).toBe("gpt-4o-mini");
+    expect(selectOpenAiModel({ ...req, attachments: [{ type: "image", dataUrl: "data:," }] }, cfg)).toBe("gpt-4o");
+    expect(selectOpenAiModel({ ...req, requiredModalities: ["image"] }, cfg)).toBe("gpt-4o");
   });
 });

@@ -58,3 +58,9 @@ coverage/
 
 # TypeScript incremental build info
 *.tsbuildinfo
+
+# Capacitor / Xcode local artifacts (ios/ project is committed)
+ios/App/Pods/
+ios/DerivedData/
+*.xcuserstate
+*.xcuserdata/

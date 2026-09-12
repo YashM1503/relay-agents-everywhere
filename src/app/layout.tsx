@@ -11,7 +11,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#1a5f4a",
+  viewportFit: "cover",
+  themeColor: "#252a25",
 };
 
 export default function RootLayout({
@@ -21,7 +22,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="relay-native-shell min-h-dvh antialiased">{children}</body>
     </html>
   );
 }

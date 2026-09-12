@@ -13,6 +13,20 @@
       "privacy_class": "cloud"
     },
     {
+      "id": "openrouter-default",
+      "display_name": "OpenRouter Agent",
+      "capabilities": [
+        "vision",
+        "forms",
+        "conversation",
+        "tool_use",
+        "research",
+        "reasoning"
+      ],
+      "status": "live",
+      "privacy_class": "cloud"
+    },
+    {
       "id": "hermes",
       "display_name": "Hermes",
       "capabilities": [
