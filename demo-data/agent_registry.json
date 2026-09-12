@@ -1,0 +1,54 @@
+{
+  "agents": [
+    {
+      "id": "openai-default",
+      "display_name": "Default Multimodal Agent",
+      "capabilities": [
+        "vision",
+        "forms",
+        "conversation",
+        "tool_use"
+      ],
+      "status": "live",
+      "privacy_class": "cloud"
+    },
+    {
+      "id": "hermes",
+      "display_name": "Hermes",
+      "capabilities": [
+        "research",
+        "reasoning"
+      ],
+      "status": "adapter_placeholder",
+      "privacy_class": "unknown"
+    },
+    {
+      "id": "ori",
+      "display_name": "Ori",
+      "capabilities": [
+        "task_execution"
+      ],
+      "status": "adapter_placeholder",
+      "privacy_class": "unknown"
+    },
+    {
+      "id": "pace",
+      "display_name": "Pace",
+      "capabilities": [
+        "specialist"
+      ],
+      "status": "adapter_placeholder",
+      "privacy_class": "unknown"
+    },
+    {
+      "id": "local-fallback",
+      "display_name": "Local Fallback",
+      "capabilities": [
+        "basic_summary"
+      ],
+      "status": "mock",
+      "privacy_class": "device"
+    }
+  ],
+  "note": "Only mark an adapter live when a real supported API is configured."
+}

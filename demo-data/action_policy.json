@@ -1,0 +1,28 @@
+{
+  "tier0": [
+    "explain",
+    "summarize",
+    "search",
+    "draft",
+    "create_reminder"
+  ],
+  "tier1": [
+    "create_calendar_event",
+    "request_availability"
+  ],
+  "tier2": [
+    "send_message",
+    "share_document",
+    "submit_form",
+    "book_appointment",
+    "cancel_appointment"
+  ],
+  "tier3": [
+    "money_transfer",
+    "change_bank_details",
+    "sign_agreement",
+    "share_ssn",
+    "release_medical_record"
+  ],
+  "default_tier3": "hold_or_explicit_strong_confirmation"
+}

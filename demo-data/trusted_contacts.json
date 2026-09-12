@@ -1,0 +1,20 @@
+{
+  "trusted_contacts": [
+    {
+      "name": "Maya Brooks",
+      "relationship": "daughter",
+      "permissions": [
+        "receive_user_initiated_share"
+      ],
+      "silent_monitoring": false
+    },
+    {
+      "name": "Alex Brooks",
+      "relationship": "partner",
+      "permissions": [
+        "receive_user_initiated_share"
+      ],
+      "silent_monitoring": false
+    }
+  ]
+}

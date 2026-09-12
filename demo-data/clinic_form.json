@@ -1,0 +1,84 @@
+{
+  "form_id": "demo-clinic-registration",
+  "organization": "Demo Clinic",
+  "purpose": "New patient registration",
+  "fields": [
+    {
+      "key": "full_name",
+      "label": "Full name",
+      "source": "profile",
+      "sensitive": false
+    },
+    {
+      "key": "dob",
+      "label": "Date of birth",
+      "source": "ask_user",
+      "sensitive": true
+    },
+    {
+      "key": "phone",
+      "label": "Phone",
+      "source": "profile",
+      "sensitive": false
+    },
+    {
+      "key": "email",
+      "label": "Email",
+      "source": "profile",
+      "sensitive": false
+    },
+    {
+      "key": "address",
+      "label": "Address",
+      "source": "profile",
+      "sensitive": true
+    },
+    {
+      "key": "emergency_contact",
+      "label": "Emergency contact",
+      "source": "ask_user",
+      "sensitive": true
+    },
+    {
+      "key": "preferred_language",
+      "label": "Preferred language",
+      "source": "profile",
+      "sensitive": false
+    },
+    {
+      "key": "sms_reminders",
+      "label": "SMS reminders",
+      "source": "ask_user",
+      "sensitive": false
+    },
+    {
+      "key": "insurance_front",
+      "label": "Insurance card front",
+      "source": "camera",
+      "sensitive": true
+    },
+    {
+      "key": "insurance_back",
+      "label": "Insurance card back",
+      "source": "camera",
+      "sensitive": true
+    },
+    {
+      "key": "reason_for_visit",
+      "label": "Reason for visit",
+      "source": "ask_user",
+      "sensitive": true
+    },
+    {
+      "key": "appointment_slot",
+      "label": "Appointment",
+      "source": "choose",
+      "sensitive": false
+    }
+  ],
+  "deliberate_error": {
+    "trigger": "insurance_back missing",
+    "machine_message": "DOCUMENT_SIDE_REQUIRED_1029",
+    "relay_translation": "The clinic also needs a photo of the back of your insurance card."
+  }
+}

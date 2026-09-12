@@ -1,0 +1,29 @@
+# RELAY Packet Index
+
+- `00_READ_ME_FIRST.md`
+- `01_PRODUCT_SPEC.md`
+- `02_UI_UX_SPEC.md`
+- `03_SYSTEM_ARCHITECTURE.md`
+- `04_AGENT_ROUTER_SPEC.md`
+- `05_COUNTERSIGN_SPEC.md`
+- `06_API_AND_DATA_MODELS.md`
+- `07_CONNECTORS_AND_IOT.md`
+- `08_BUILDER_A_EXPERIENCE_RUNBOOK.md`
+- `09_BUILDER_B_RUNTIME_RUNBOOK.md`
+- `10_BUSINESS_DEMO_RUNBOOK.md`
+- `11_DEMO_DATASET_GUIDE.md`
+- `12_BUILD_DAY_RUNBOOK.md`
+- `13_TEST_PLAN.md`
+- `14_RED_TEAM_AND_EDGE_CASES.md`
+- `15_BUSINESS_CASE.md`
+- `16_REPO_STRUCTURE.md`
+- `17_SUBMISSION_CHECKLIST.md`
+- `18_HACKATHON_COMPLIANCE_NOTE.md`
+- `demo_data/action_policy.json`
+- `demo_data/agent_registry.json`
+- `demo_data/appointment_slots.json`
+- `demo_data/clinic_form.json`
+- `demo_data/demo_scenarios.json`
+- `demo_data/insurance_card.json`
+- `demo_data/trusted_contacts.json`
+- `demo_data/user_profile.json`

@@ -1,0 +1,27 @@
+{
+  "user_id": "demo-evelyn",
+  "display_name": "Evelyn Brooks",
+  "synthetic": true,
+  "preferences": {
+    "large_text": true,
+    "voice_first": true,
+    "one_question_at_a_time": true,
+    "language": "en",
+    "read_important_choices_aloud": true,
+    "step_free_preferred": true
+  },
+  "contact": {
+    "phone": "+1-555-010-2040",
+    "email": "evelyn.demo@example.com",
+    "address": "125 Example Ave, Brooklyn, NY 11211"
+  },
+  "action_policy": {
+    "draft": "auto",
+    "calendar": "auto",
+    "send_message": "ask",
+    "share_document": "ask",
+    "submit_form": "ask",
+    "purchase": "always_ask",
+    "money_transfer": "never_auto"
+  }
+}

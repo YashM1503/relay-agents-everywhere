@@ -1,0 +1,19 @@
+{
+  "slots": [
+    {
+      "id": "slot-1",
+      "label": "Sep 18, 2:30 PM",
+      "accessible_entry_confirmed": true
+    },
+    {
+      "id": "slot-2",
+      "label": "Sep 19, 10:00 AM",
+      "accessible_entry_confirmed": true
+    },
+    {
+      "id": "slot-3",
+      "label": "Sep 21, 4:15 PM",
+      "accessible_entry_confirmed": false
+    }
+  ]
+}
