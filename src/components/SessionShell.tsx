@@ -12,7 +12,7 @@ type SessionShellProps = {
 };
 
 export function SessionShell({ children }: SessionShellProps) {
-  const { state, isActive, isDemoMode } = useSession();
+  const { state, isActive, isDebugPanelEnabled } = useSession();
   const [offline, setOffline] = useState(false);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export function SessionShell({ children }: SessionShellProps) {
         taskTitle={state.taskTitle}
       />
       <div
-        className={`mx-auto max-w-lg px-4 py-6 ${isDemoMode ? "pb-[calc(40vh+1rem)]" : ""}`}
+        className={`mx-auto max-w-lg px-4 py-6 ${isDebugPanelEnabled ? "pb-[calc(40vh+1rem)]" : ""}`}
       >
         {offline && (
           <div className="mb-4">
@@ -46,7 +46,7 @@ export function SessionShell({ children }: SessionShellProps) {
         )}
         {children}
       </div>
-      <DebugPanel events={state.debugEvents} visible={isDemoMode} />
+      <DebugPanel events={state.debugEvents} visible={isDebugPanelEnabled} />
     </>
   );
 }

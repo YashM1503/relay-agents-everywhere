@@ -14,9 +14,12 @@ import {
   resetClinicFormSubmissions,
   submitRegistration,
 } from "@/lib/tools";
+import { isDemoMode } from "@/lib/config/app-mode";
 import { loadUserProfile } from "@/lib/tools/profile";
 import { parseSyntheticInsurance } from "@/lib/tools/insurance";
 import type { RelaySession } from "@/types";
+
+export type SessionScenario = "general" | "clinic";
 
 export type GuidedQuestion = {
   id: string;
@@ -73,6 +76,7 @@ export type SessionRecord = {
   }>;
   selectedAgentId: string | null;
   lastToolError: string | null;
+  scenario: SessionScenario;
 };
 
 const sessions = new Map<string, SessionRecord>();
@@ -87,10 +91,6 @@ function nowLabel(): string {
 
 function newId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function isDemoMode(): boolean {
-  return process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 }
 
 function isTrustedClinicObservation(
@@ -118,7 +118,8 @@ function isTrustedClinicObservation(
   return false;
 }
 
-function buildGuidedQuestions(): GuidedQuestion[] {
+function buildGuidedQuestions(scenario: SessionScenario = "clinic"): GuidedQuestion[] {
+  if (scenario !== "clinic") return [];
   const form = loadClinicForm();
   const profile = loadUserProfile();
 
@@ -168,23 +169,39 @@ function seedKnownFields(): Record<string, unknown> {
   };
 }
 
-function buildInitialTask(sessionId: string): TaskState {
-  const form = loadClinicForm();
-  const askFields = form.fields
-    .filter((f) => f.source === "ask_user" && f.key !== "appointment_slot")
-    .map((f) => f.key);
-  const cameraFields = form.fields
-    .filter((f) => f.source === "camera")
-    .map((f) => f.key);
+function buildInitialTask(
+  sessionId: string,
+  scenario: SessionScenario = "general",
+): TaskState {
+  if (scenario === "clinic") {
+    const form = loadClinicForm();
+    const askFields = form.fields
+      .filter((f) => f.source === "ask_user" && f.key !== "appointment_slot")
+      .map((f) => f.key);
+    const cameraFields = form.fields
+      .filter((f) => f.source === "camera")
+      .map((f) => f.key);
+
+    return {
+      task_id: `task_${sessionId}`,
+      goal: `Complete ${form.purpose} at ${form.organization}`,
+      status: "pending",
+      accepted_by_user: false,
+      destination_verified: false,
+      known_fields: isDemoMode() ? seedKnownFields() : {},
+      unresolved_fields: [...askFields, ...cameraFields, "appointment_slot"],
+      dependencies: [],
+    };
+  }
 
   return {
     task_id: `task_${sessionId}`,
-    goal: `Complete ${form.purpose} at ${form.organization}`,
+    goal: "Help with what you are doing right now",
     status: "pending",
     accepted_by_user: false,
     destination_verified: false,
-    known_fields: seedKnownFields(),
-    unresolved_fields: [...askFields, ...cameraFields, "appointment_slot"],
+    known_fields: {},
+    unresolved_fields: [],
     dependencies: [],
   };
 }
@@ -203,8 +220,15 @@ export function resetDemoState(): void {
   sessions.clear();
 }
 
-export function createSession(options?: { demo?: boolean }): SessionRecord {
-  if (options?.demo || isDemoMode()) {
+export function createSession(options?: {
+  demo?: boolean;
+  scenario?: SessionScenario;
+}): SessionRecord {
+  const demo = options?.demo ?? isDemoMode();
+  const scenario: SessionScenario =
+    options?.scenario ?? (demo ? "clinic" : "general");
+
+  if (demo) {
     resetClinicFormSubmissions();
   }
 
@@ -221,8 +245,9 @@ export function createSession(options?: { demo?: boolean }): SessionRecord {
 
   const record: SessionRecord = {
     session,
-    task: buildInitialTask(sessionId),
+    task: buildInitialTask(sessionId, scenario),
     machineState: "ACTIVE_SESSION",
+    scenario,
     answers: {},
     captures: {},
     backCaptureAttempts: 0,
@@ -274,9 +299,17 @@ function observeSharedMessage(record: SessionRecord, value: string): SessionReco
   return record;
 }
 
+export type ObservePayload = {
+  type: string;
+  value?: string;
+  transcript?: string;
+  confidence?: number;
+  imageRef?: string;
+};
+
 export function observeSession(
   sessionId: string,
-  observation: { type: string; value?: string },
+  observation: ObservePayload,
 ): SessionRecord | null {
   const record = sessions.get(sessionId);
   if (!record) return null;
@@ -290,8 +323,53 @@ export function observeSession(
     record,
     "observation",
     `Received ${observation.type}`,
-    observation.value ?? "",
+    observation.transcript ?? observation.value ?? "",
   );
+
+  if (observation.type === "voice") {
+    const transcript = (observation.transcript ?? observation.value ?? "").trim();
+    record.task.known_fields = {
+      ...record.task.known_fields,
+      user_intent: transcript,
+      voice_confidence: observation.confidence,
+    };
+
+    const clinicSignal =
+      /clinic|registration|register|appointment|check.?in/i.test(transcript);
+
+    if (record.scenario === "general") {
+      record.task.status = "in_progress";
+      record.task.accepted_by_user = true;
+      if (transcript) record.task.goal = transcript.slice(0, 160);
+      record.machineState = "ASSIST";
+      record.session.state = "ASSIST";
+      record.lastToolError = null;
+      pushDebug(record, "intent", "Voice input understood", transcript.slice(0, 80));
+      return record;
+    }
+
+    if (clinicSignal) {
+      record.task.status = "in_progress";
+      record.task.accepted_by_user = true;
+      record.machineState = "ASSIST";
+      record.session.state = "ASSIST";
+      pushDebug(record, "intent", "Clinic intent from voice", transcript.slice(0, 80));
+      return record;
+    }
+
+    pushDebug(record, "observation", "Voice noted", transcript.slice(0, 80) || "No transcript");
+    return record;
+  }
+
+  if (observation.type === "image") {
+    const ref = observation.imageRef ?? observation.value ?? "";
+    record.task.known_fields = { ...record.task.known_fields, last_image: ref };
+    record.task.status = "in_progress";
+    record.machineState = "ASSIST";
+    record.session.state = "ASSIST";
+    pushDebug(record, "observation", "Image received", "Ready to help");
+    return record;
+  }
 
   const form = loadClinicForm();
   const trusted = isTrustedClinicObservation(observation, form.form_id);
@@ -316,6 +394,18 @@ export function observeSession(
       return record;
     }
 
+    record.scenario = "clinic";
+    const clinicTask = buildInitialTask(record.session.sessionId, "clinic");
+    record.task = {
+      ...clinicTask,
+      known_fields: {
+        ...clinicTask.known_fields,
+        ...record.task.known_fields,
+      },
+      status: "in_progress",
+      accepted_by_user: true,
+      destination_verified: true,
+    };
     record.task.status = "in_progress";
     record.task.accepted_by_user = true;
     record.task.destination_verified = true;
@@ -339,7 +429,11 @@ export function getSessionStateForClient(sessionId: string) {
   if (!record) return null;
 
   const form = loadClinicForm();
-  const profileFields = form.fields.filter((f) => f.source === "profile").length;
+  const questions = buildGuidedQuestions(record.scenario);
+  const profileFields =
+    record.scenario === "clinic"
+      ? form.fields.filter((f) => f.source === "profile").length
+      : 0;
   const filledCount =
     profileFields +
     Object.keys(record.answers).length +
@@ -349,13 +443,15 @@ export function getSessionStateForClient(sessionId: string) {
   return {
     sessionId: record.session.sessionId,
     status: mapMachineToUiStatus(record),
-    taskTitle: "Clinic registration",
+    taskTitle:
+      record.scenario === "clinic" ? "Clinic registration" : "Stay with me",
     taskStep: taskStepLabel(record),
     doingSummary: doingSummary(record),
-    questions: buildGuidedQuestions(),
+    questions,
     currentQuestionIndex: Object.keys(record.answers).length,
     filledCount,
-    totalFields: form.fields.length,
+    totalFields: record.scenario === "clinic" ? form.fields.length : 0,
+    scenario: record.scenario,
     countersign: record.pendingProposal
       ? {
           actionId: record.pendingProposal.action_id,
@@ -381,12 +477,12 @@ export function getSessionStateForClient(sessionId: string) {
 function mapMachineToUiStatus(record: SessionRecord): string {
   if (record.receipt) return "complete";
   if (record.pendingProposal && !record.executed) return "confirm";
-  if (record.captures.front && !record.captures.back) return "capture";
-  if (
-    Object.keys(record.answers).length <
-    buildGuidedQuestions().length
-  ) {
-    return "guided";
+  if (record.scenario === "clinic") {
+    if (record.captures.front && !record.captures.back) return "capture";
+    const questions = buildGuidedQuestions(record.scenario);
+    if (Object.keys(record.answers).length < questions.length) {
+      return "guided";
+    }
   }
   if (record.session.status === "paused") return "paused";
   return "active";
@@ -395,6 +491,10 @@ function mapMachineToUiStatus(record: SessionRecord): string {
 function taskStepLabel(record: SessionRecord): string {
   if (record.receipt) return "Done";
   if (record.pendingProposal) return "Ready to submit";
+  if (record.scenario === "general") {
+    if (record.task.known_fields.user_intent) return "Working with you";
+    return "Getting started";
+  }
   if (record.captures.front && !record.captures.back) return "Insurance card — back";
   if (record.captures.front) return "Insurance card — front";
   if (Object.keys(record.answers).length > 0) return "Collecting information";
@@ -407,15 +507,26 @@ function doingSummary(record: SessionRecord): string {
     return record.lastToolError;
   }
   if (record.receipt) {
-    return "Registration submitted successfully.";
+    return record.scenario === "clinic"
+      ? "Registration submitted successfully."
+      : "Done. Here is your receipt.";
   }
   if (record.pendingProposal) {
     return "Please review what will be shared before I submit.";
   }
+  if (record.scenario === "general") {
+    if (record.task.known_fields.user_intent) {
+      return "I'm with you. Tell me more, or tap Stop if you want to end this session.";
+    }
+    return "Tell me what you're working on. You can speak or type — I'm listening.";
+  }
   if (record.captures.front && !record.captures.back) {
     return "Now flip your card and capture the back. The clinic needs both sides.";
   }
-  if (Object.keys(record.answers).length >= buildGuidedQuestions().length) {
+  if (
+    Object.keys(record.answers).length >=
+    buildGuidedQuestions(record.scenario).length
+  ) {
     return "Great — now I need photos of your insurance card, front and back.";
   }
   if (record.task.destination_verified) {
@@ -445,8 +556,8 @@ export function answerQuestion(
     `${questionId}: ${answer.slice(0, 40)}`,
   );
 
-  const questions = buildGuidedQuestions();
-  if (Object.keys(record.answers).length >= questions.length) {
+  const questions = buildGuidedQuestions(record.scenario);
+  if (questions.length > 0 && Object.keys(record.answers).length >= questions.length) {
     record.task.status = "waiting_input";
     pushDebug(record, "agent", "Guided questions complete", "Proceed to capture");
   }

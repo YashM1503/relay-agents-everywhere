@@ -7,6 +7,7 @@ import { Notice } from "@/components/Notice";
 import { SessionControls } from "@/components/SessionControls";
 import { TaskCard } from "@/components/TaskCard";
 import { useSession } from "@/components/SessionProvider";
+import { VoiceRecorder } from "@/components/VoiceRecorder";
 import { COPY } from "@/lib/copy";
 
 export default function SessionPage() {
@@ -19,7 +20,10 @@ export default function SessionPage() {
     explainSession,
     stopSession,
     beginGuidedQuestions,
+    submitTextObservation,
+    refreshState,
     isActive,
+    isDemoMode,
   } = useSession();
 
   useEffect(() => {
@@ -100,7 +104,7 @@ export default function SessionPage() {
           </Notice>
         )}
 
-        {isActive && state.status === "active" && (
+        {isActive && state.status === "active" && isDemoMode && (
           <button
             type="button"
             onClick={handleContinue}
@@ -109,6 +113,60 @@ export default function SessionPage() {
             Let&apos;s begin
           </button>
         )}
+
+        {isActive &&
+          state.status === "active" &&
+          !isDemoMode &&
+          state.taskStep === "Getting started" && (
+            <div className="space-y-4">
+              <VoiceRecorder
+                sessionId={state.sessionId ?? undefined}
+                submitLabel="Tell me with your voice"
+                onComplete={() => void refreshState()}
+              />
+              <form
+                className="space-y-3"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = e.currentTarget;
+                  const input = form.elements.namedItem(
+                    "intent",
+                  ) as HTMLInputElement;
+                  void submitTextObservation(input.value).then(() => {
+                    input.value = "";
+                    void refreshState();
+                  });
+                }}
+              >
+                <label htmlFor="session-intent" className="sr-only">
+                  Describe what you need help with
+                </label>
+                <input
+                  id="session-intent"
+                  name="intent"
+                  type="text"
+                  placeholder="Or type what you're working on…"
+                  className="w-full rounded-xl border border-relay-border px-4 py-3 text-lg"
+                />
+                <button type="submit" className="relay-btn-primary w-full">
+                  Send
+                </button>
+              </form>
+            </div>
+          )}
+
+        {isActive &&
+          state.status === "active" &&
+          !isDemoMode &&
+          state.taskStep !== "Getting started" && (
+            <button
+              type="button"
+              onClick={handleContinue}
+              className="relay-btn-primary w-full"
+            >
+              Continue
+            </button>
+          )}
 
         {(state.status === "guided" ||
           state.status === "capture" ||

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getServerAppMode } from "@/lib/config/app-mode";
 import { openAiAdapter } from "@/lib/agents/adapters/openai";
 import { openRouterAdapter } from "@/lib/agents/adapters/openrouter";
 
@@ -12,7 +13,8 @@ export async function GET() {
 
   return NextResponse.json({
     ok: true,
-    demoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    appMode: getServerAppMode(),
+    demoMode: getServerAppMode() === "demo",
     providers: {
       openai: {
         available: openai.available,

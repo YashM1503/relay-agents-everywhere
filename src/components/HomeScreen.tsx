@@ -1,49 +1,75 @@
 "use client";
 
 import Link from "next/link";
+import { isClientDemoMode } from "@/lib/config/app-mode";
 
-const actions = [
-  {
-    id: "talk",
-    label: "Talk",
-    href: "#",
-    disabled: true,
-    hint: "Coming soon",
-  },
-  {
-    id: "show",
-    label: "Show",
-    href: "#",
-    disabled: true,
-    hint: "Coming soon",
-  },
-  {
-    id: "stay",
-    label: "Stay with me",
-    href: "/session",
-    disabled: false,
-    hint: "Here with you. On your terms.",
-    featured: true,
-  },
-  {
-    id: "watching",
-    label: "Watching",
-    href: "#",
-    disabled: true,
-    hint: "Coming soon",
-  },
-] as const;
+type HomeAction = {
+  id: string;
+  label: string;
+  href: string;
+  hint: string;
+  featured?: boolean;
+  hidden?: boolean;
+  disabled?: boolean;
+};
+
+function getActions(demoMode: boolean): HomeAction[] {
+  const core: HomeAction[] = [
+    {
+      id: "talk",
+      label: "Talk",
+      href: "/talk",
+      hint: "Ask with your voice.",
+    },
+    {
+      id: "show",
+      label: "Show",
+      href: "/show",
+      hint: "Show me something to explain.",
+    },
+    {
+      id: "stay",
+      label: "Stay with me",
+      href: "/session",
+      hint: "Here with you. On your terms.",
+      featured: true,
+    },
+  ];
+
+  if (demoMode) {
+    return [
+      ...core,
+      {
+        id: "watching",
+        label: "Watching",
+        href: "#",
+        hint: "Coming soon",
+        disabled: true,
+      },
+    ];
+  }
+
+  return core;
+}
 
 export function HomeScreen() {
-  const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+  const demoMode = isClientDemoMode();
+  const actions = getActions(demoMode).filter((a) => !a.hidden);
 
   return (
     <main className="mx-auto flex min-h-dvh max-w-lg flex-col px-4 py-8">
       <header className="relay-page-head mb-10 text-center">
-        <p className="relay-eyebrow">{demoMode ? "Demo mode" : "Ready when you need me"}</p>
+        {!demoMode && (
+          <p className="relay-eyebrow">Ready when you need me</p>
+        )}
+        {demoMode && (
+          <p className="relay-eyebrow">Demo mode</p>
+        )}
         <h1 className="mt-3 text-relay-text">A little help. A lighter day.</h1>
         <p className="relay-support mt-3 text-lg">
-          Hello, Evelyn. What can I help you with?
+          {demoMode
+            ? "Hello, Evelyn. What can I help you with?"
+            : "What can I help you with?"}
         </p>
       </header>
 
@@ -83,22 +109,6 @@ export function HomeScreen() {
 
       <footer className="relay-support mt-8 text-center text-sm">
         <p>Always your choice. Nothing shared without your say.</p>
-        <nav
-          aria-label="Secondary actions"
-          className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2"
-        >
-          <span aria-disabled="true" className="opacity-60">
-            Activity
-          </span>
-          <span aria-hidden="true">·</span>
-          <span aria-disabled="true" className="opacity-60">
-            Connections
-          </span>
-          <span aria-hidden="true">·</span>
-          <span aria-disabled="true" className="opacity-60">
-            Preferences
-          </span>
-        </nav>
       </footer>
     </main>
   );

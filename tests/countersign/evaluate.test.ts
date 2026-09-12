@@ -176,6 +176,7 @@ describe("submitRegistration tool", () => {
 
 describe("user policy defaults", () => {
   it("blocks money_transfer auto execution via never_auto", () => {
+    process.env.RELAY_APP_MODE = "demo";
     const policy: UserActionPolicy = getUserActionPolicy();
     expect(policy.money_transfer).toBe("never_auto");
   });

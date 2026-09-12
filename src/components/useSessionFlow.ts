@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { isClientDemoMode, isDebugPanelEnabled } from "@/lib/config/app-mode";
 
 export type SessionStatus =
   | "idle"
@@ -225,43 +226,81 @@ export function useSessionFlow() {
   }, []);
 
   const startSession = useCallback(async () => {
+    const demo = isClientDemoMode();
     const result = await apiFetch<{ sessionId: string }>("/api/sessions", {
       method: "POST",
-      body: JSON.stringify({ demo: true }),
+      body: JSON.stringify({ demo }),
     });
 
-    const sessionId = result?.sessionId ?? `demo-${Date.now()}`;
+    if (!result?.sessionId) {
+      setState({
+        ...INITIAL,
+        error: "Could not start a session. Check your connection and try again.",
+      });
+      return;
+    }
+
+    const sessionId = result.sessionId;
+    const debugEvents = isDebugPanelEnabled()
+      ? pushDebug([], "observation", "Session started", "User tapped Stay with me")
+      : [];
+
+    if (demo) {
+      setState({
+        ...INITIAL,
+        sessionId,
+        status: "active",
+        taskTitle: "Clinic registration",
+        taskStep: "Scanning context",
+        doingSummary:
+          "I'm looking at what's around you to understand the task.",
+        debugEvents,
+      });
+
+      await apiFetch(`/api/sessions/${sessionId}/observe`, {
+        method: "POST",
+        body: JSON.stringify({ type: "qr", value: "demo-clinic-registration" }),
+      });
+
+      const remote = await apiFetch<Partial<SessionState>>(
+        `/api/sessions/${sessionId}/state`,
+      );
+      setState((prev) => ({
+        ...prev,
+        ...(remote ?? {}),
+        sessionId,
+        status: "active",
+        taskStep: remote?.taskStep ?? "Registration detected",
+        doingSummary:
+          remote?.doingSummary ??
+          "I found a clinic registration form. I'll walk you through it step by step.",
+        debugEvents: isDebugPanelEnabled()
+          ? pushDebug(
+              prev.debugEvents,
+              "intent",
+              "Task recognized",
+              "Clinic registration at Demo Clinic",
+            )
+          : prev.debugEvents,
+      }));
+      return;
+    }
+
+    const remote = await apiFetch<Partial<SessionState>>(
+      `/api/sessions/${sessionId}/state`,
+    );
     setState({
       ...INITIAL,
       sessionId,
+      ...(remote ?? {}),
       status: "active",
-      taskStep: "Scanning context",
-      doingSummary: "I'm looking at what's around you to understand the task.",
-      debugEvents: pushDebug(
-        [],
-        "observation",
-        "Session started",
-        "User tapped Stay with me",
-      ),
-    });
-
-    await apiFetch(`/api/sessions/${sessionId}/observe`, {
-      method: "POST",
-      body: JSON.stringify({ type: "qr", value: "demo-clinic-registration" }),
-    });
-
-    setState((prev) => ({
-      ...prev,
-      taskStep: "Registration detected",
+      taskTitle: remote?.taskTitle ?? "Stay with me",
+      taskStep: remote?.taskStep ?? "Getting started",
       doingSummary:
-        "I found a clinic registration form. I'll walk you through it step by step.",
-      debugEvents: pushDebug(
-        prev.debugEvents,
-        "intent",
-        "Task recognized",
-        "Clinic registration at Demo Clinic",
-      ),
-    }));
+        remote?.doingSummary ??
+        "Tell me what you're working on. You can speak or type — I'm listening.",
+      debugEvents,
+    });
   }, []);
 
   const endSession = useCallback(async () => {
@@ -548,10 +587,31 @@ export function useSessionFlow() {
     }
   }, [state.sessionId]);
 
+  const submitTextObservation = useCallback(
+    async (text: string) => {
+      if (!state.sessionId || !text.trim()) return;
+      const remote = await apiFetch<Partial<SessionState>>(
+        `/api/sessions/${state.sessionId}/observe`,
+        {
+          method: "POST",
+          body: JSON.stringify({ type: "voice", transcript: text.trim() }),
+        },
+      );
+      if (remote) {
+        setState((prev) => ({ ...prev, ...remote, sessionId: state.sessionId }));
+      }
+    },
+    [state.sessionId],
+  );
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
-    if (params.get("demo") === "true" && !state.sessionId) {
+    if (
+      isClientDemoMode() &&
+      params.get("demo") === "true" &&
+      !state.sessionId
+    ) {
       void startSession();
     }
   }, [startSession, state.sessionId]);
@@ -571,8 +631,10 @@ export function useSessionFlow() {
     cancelSubmit,
     reviewSubmit,
     refreshState,
+    submitTextObservation,
     isActive: state.status !== "idle" && state.status !== "complete",
-    isDemoMode: process.env.NEXT_PUBLIC_DEMO_MODE === "true",
+    isDemoMode: isClientDemoMode(),
+    isDebugPanelEnabled: isDebugPanelEnabled(),
   };
 }
 
