@@ -1,6 +1,8 @@
 # RELAY iOS Demo Setup
 
-Minimal Capacitor shell around the **hosted** RELAY Next.js application. The iPhone app is a native wrapper — all API routes, COUNTERSIGN, router, and agent adapters stay on your Mac (or deployed server).
+Minimal Capacitor shell around the **hosted** RELAY Next.js application. The iPhone app is a native wrapper — all API routes, COUNTERSIGN, router, and agent adapters stay on the server (Replit, your Mac, or another host).
+
+**Hosted demo:** [https://relay-assist--yashmishra1904.replit.app/](https://relay-assist--yashmishra1904.replit.app/)
 
 **Architecture:** iPhone shell → Capacitor WebView → `CAPACITOR_SERVER_URL` → RELAY Next.js → server-side APIs → OpenRouter/OpenAI
 
@@ -26,6 +28,21 @@ No API keys belong in the iOS binary.
 cd relay-agents-everywhere
 npm install
 ```
+
+---
+
+## 3a. Replit backend (recommended — no Mac server)
+
+If RELAY is deployed on Replit, skip sections 3–4 and sync the shell directly:
+
+```bash
+npm run ios:replit
+npm run cap:open:ios
+```
+
+This sets `CAPACITOR_SERVER_URL` to `https://relay-assist--yashmishra1904.replit.app`. API keys live in Replit Secrets only.
+
+See [REPLIT.md](./REPLIT.md) for deploy steps.
 
 ---
 
@@ -104,6 +121,7 @@ This copies `capacitor-web/` assets and writes `ios/App/App/capacitor.config.jso
 
 | URL type | Example | Physical iPhone |
 |----------|---------|-----------------|
+| **Replit (hosted)** | `https://relay-assist--yashmishra1904.replit.app` | ✓ Works anywhere |
 | HTTPS tunnel | `https://xxxx.lhr.life` | ✓ Works anywhere |
 | LAN IP | `http://192.168.x.x:3000` | ✓ Same Wi‑Fi as Mac |
 | localhost | `http://localhost:3000` | Simulator only |

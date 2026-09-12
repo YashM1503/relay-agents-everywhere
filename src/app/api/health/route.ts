@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerAppMode } from "@/lib/config/app-mode";
+import { RELAY_REPLIT_URL } from "@/lib/config/hosts";
 import { openAiAdapter } from "@/lib/agents/adapters/openai";
 import { openRouterAdapter } from "@/lib/agents/adapters/openrouter";
 
@@ -32,6 +33,12 @@ export async function GET() {
     ios: {
       architecture: "Capacitor WebView → hosted Next.js (API keys stay on server)",
       syncEnv: "CAPACITOR_SERVER_URL",
+      replitUrl: RELAY_REPLIT_URL,
+      syncCommand: "npm run ios:replit",
+    },
+    replit: {
+      url: RELAY_REPLIT_URL,
+      docs: "REPLIT.md",
     },
   });
 }

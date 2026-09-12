@@ -6,6 +6,8 @@ RELAY helps people finish real-world tasks — clinic registration, forms, docum
 
 Built for **AI Tinkerers — Agents Everywhere**.
 
+**Live demo:** [relay-assist on Replit](https://relay-assist--yashmishra1904.replit.app/) · **iPhone:** Capacitor shell → same hosted backend ([setup](./IOS_DEMO_SETUP.md))
+
 > *You should not have to leave the real world to use AI.*
 
 ---
@@ -50,8 +52,9 @@ bash scripts/runtime-integration.sh   # full API path (dev server must be runnin
 
 ### iPhone demo (Capacitor)
 
-Host Next.js on your Mac, sync the shell to your LAN IP, and run from Xcode.
-See [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md).
+**Replit backend (recommended):** no Mac server — `npm run ios:replit` then open Xcode.
+
+**Local backend:** host Next.js on your Mac, sync to LAN IP. See [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md) · [REPLIT.md](./REPLIT.md).
 
 ### Production deploy
 

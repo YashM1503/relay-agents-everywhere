@@ -91,7 +91,23 @@ Health check: `GET /api/health`
 
 ---
 
-## Option C — Platform (Railway, Render, Fly, etc.)
+## Option C — Replit (hosted demo + iOS backend)
+
+**URL:** [https://relay-assist--yashmishra1904.replit.app/](https://relay-assist--yashmishra1904.replit.app/)
+
+The repo includes `.replit` and `replit.nix`. Import on Replit, set API keys in **Secrets**, and deploy.
+
+```bash
+# iPhone shell → Replit (no local dev server)
+npm run ios:replit
+npm run cap:open:ios
+```
+
+Full guide: [REPLIT.md](./REPLIT.md)
+
+---
+
+## Option D — Platform (Railway, Render, Fly, etc.)
 
 1. Connect repo
 2. **Build command:** `npm ci && npm run build`
@@ -116,7 +132,8 @@ bash scripts/runtime-integration.sh   # with server running
 The iPhone shell loads a **hosted** backend URL — deploy the web app first, then:
 
 ```bash
-CAPACITOR_SERVER_URL=https://your-deployed-host npm run ios:sync
+CAPACITOR_SERVER_URL=https://relay-assist--yashmishra1904.replit.app npm run ios:sync
+# or: npm run ios:replit
 ```
 
 See [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md).

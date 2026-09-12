@@ -7,6 +7,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  * Examples:
  *   http://192.168.1.42:3000   (Mac on LAN — use for physical iPhone)
  *   http://localhost:3000        (iOS Simulator only)
+ *   https://relay-assist--yashmishra1904.replit.app  (hosted Replit demo)
  *   https://your-deployed-relay.example.com
  *
  * Never put API keys in this file.

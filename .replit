@@ -1,0 +1,22 @@
+run = "npm run start:prod"
+entrypoint = "README.md"
+modules = ["nodejs-20"]
+
+[nix]
+channel = "stable-24_05"
+
+[deployment]
+run = ["sh", "-c", "npm run start:prod"]
+build = ["sh", "-c", "npm ci && npm run build"]
+deploymentTarget = "cloudrun"
+
+[[ports]]
+localPort = 3000
+externalPort = 80
+
+[env]
+PORT = "3000"
+HOST = "0.0.0.0"
+RELAY_APP_MODE = "demo"
+NEXT_PUBLIC_RELAY_APP_MODE = "demo"
+NEXT_PUBLIC_DEMO_MODE = "true"
