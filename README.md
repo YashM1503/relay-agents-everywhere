@@ -16,7 +16,6 @@ Built for **AI Tinkerers — Agents Everywhere**.
 |----------|----------------|
 | **Web (Replit)** | **[relay-assist--yashmishra1904.replit.app](https://relay-assist--yashmishra1904.replit.app/)** |
 | **iPhone (Capacitor)** | `npm run ios:replit` → open in Xcode → run on device |
-| **Local dev** | `npm install && npm run dev` → [localhost:3000](http://localhost:3000) |
 
 The iPhone app is a native shell (WebView) that loads the **hosted** Next.js backend — API keys stay on the server (Replit Secrets), never in the iOS binary.
 
@@ -52,18 +51,16 @@ You  →  RELAY  →  Agent router  →  Specialist  →  COUNTERSIGN  →  Acti
 
 ## Quick start
 
+Open the **[Replit demo](https://relay-assist--yashmishra1904.replit.app/)** and tap **Stay with me** for the clinic registration demo.
+
+**Developers** cloning the repo:
+
 ```bash
 npm install
-cp .env.example .env
-npm run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) and tap **Stay with me** for the clinic registration demo.
-
-```bash
-npm test                              # unit + integration tests
+cp .env.example .env.local
+npm test
 npm run typecheck
-bash scripts/runtime-integration.sh   # full API path (dev server must be running)
+npm run deploy:check
 ```
 
 ### iPhone demo (Capacitor)
@@ -72,8 +69,6 @@ bash scripts/runtime-integration.sh   # full API path (dev server must be runnin
 npm run ios:replit      # sync shell → Replit backend (recommended)
 npm run cap:open:ios    # build & run on iPhone from Xcode
 ```
-
-Local Mac backend: see [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md).
 
 ### Production deploy
 
