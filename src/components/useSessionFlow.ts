@@ -513,6 +513,11 @@ export function useSessionFlow() {
   }, [state.sessionId, state.countersign]);
 
   const cancelSubmit = useCallback(async () => {
+    // Clear the proposal server-side too, so it can never be executed later (QA case 11).
+    const actionId = state.countersign?.actionId;
+    if (state.sessionId && actionId) {
+      await apiFetch(`/api/actions/${actionId}/cancel`, { method: "POST" });
+    }
     setState((prev) => ({
       ...prev,
       status: "active",
@@ -521,7 +526,7 @@ export function useSessionFlow() {
       doingSummary:
         "Submission cancelled. Nothing was shared. You can review or stop anytime.",
     }));
-  }, []);
+  }, [state.sessionId, state.countersign]);
 
   const reviewSubmit = useCallback(() => {
     setState((prev) => ({

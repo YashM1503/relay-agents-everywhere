@@ -55,3 +55,6 @@ pnpm-debug.log*
 # Coverage / test output
 coverage/
 .nyc_output/
+
+# TypeScript incremental build info
+*.tsbuildinfo

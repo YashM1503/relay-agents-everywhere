@@ -1,0 +1,27 @@
+{
+  "name": "@relay/runtime",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "RELAY runtime: session state, ingestion, agent router, tools, COUNTERSIGN, receipts (Builder 2)",
+  "scripts": {
+    "check": "npm run typecheck && npm test",
+    "check:provider": "tsx scripts/check-provider.ts",
+    "demo": "tsx scripts/happy-path.ts",
+    "demo:3x": "tsx scripts/happy-path.ts && tsx scripts/happy-path.ts && tsx scripts/happy-path.ts",
+    "demo:web": "tsx src/server.ts",
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "test": "tsx --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openai": "^4.67.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^18.19.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

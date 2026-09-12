@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RELAY runtime demo</title>
+<style>
+  :root { color-scheme: light; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; font-size: 19px; line-height: 1.45; margin: 0 auto; padding: 16px; max-width: 640px; background: #f6f6f4; color: #1a1a1a; }
+  h1 { font-size: 1.3rem; margin: 0; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+  .muted { color: #555; font-size: 0.85rem; }
+  #status { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0; font-size: 0.85rem; }
+  .badge { background: #e3e3df; border-radius: 999px; padding: 4px 12px; }
+  #log { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .msg { padding: 12px 14px; border-radius: 14px; max-width: 92%; white-space: pre-wrap; }
+  .relay { background: #fff; border: 1px solid #ddd; align-self: flex-start; }
+  .user { background: #d9e8ff; align-self: flex-end; }
+  .card { border: 2px solid #c8891a; background: #fff8ea; border-radius: 12px; padding: 12px 14px; margin: 10px 0; }
+  .card.receipt { border-color: #2a8a5a; background: #edf9f1; }
+  .card h2 { font-size: 1rem; margin: 0 0 8px; }
+  .card ul { margin: 6px 0; padding-left: 20px; font-size: 0.95rem; }
+  button { font: inherit; font-size: 1rem; min-height: 48px; padding: 10px 16px; border-radius: 12px; border: 1px solid #999; background: #fff; cursor: pointer; margin: 4px 6px 4px 0; }
+  button.primary { background: #1c4fd8; color: #fff; border-color: #1c4fd8; }
+  button.danger { background: #b3261e; color: #fff; border-color: #b3261e; }
+  button.listening { background: #ffd8d8; border-color: #b3261e; color: #b3261e; font-weight: 700; }
+  input[type=text], textarea { font: inherit; width: 100%; box-sizing: border-box; padding: 12px; border-radius: 12px; border: 1px solid #999; min-height: 48px; }
+  input[type=file] { font: inherit; font-size: 0.9rem; }
+  #input { margin: 10px 0; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+  .row input[type=text] { flex: 1; min-width: 200px; }
+  details { margin-top: 20px; font-size: 0.9rem; }
+  summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>RELAY <span class="muted">runtime demo</span></h1>
+  <span class="muted">Builder 2 dev harness, not the product UI</span>
+</header>
+<div id="status" aria-live="polite">
+  <span class="badge" id="state">no session</span>
+  <span class="badge" id="step" hidden></span>
+  <span class="badge" id="provider"></span>
+</div>
+<div id="log" aria-live="polite"></div>
+<div id="proposal" class="card" hidden></div>
+<div id="receipt" class="card receipt" hidden></div>
+<div id="input"></div>
+<div class="row">
+  <button id="stop" class="danger" aria-label="Stop and cancel any pending action">Stop</button>
+  <button id="new">New session</button>
+</div>
+<details>
+  <summary>Share a message with RELAY (for example a text you received)</summary>
+  <textarea id="share" rows="2" placeholder="Urgent — pay $350 now to keep your appointment."></textarea>
+  <button id="shareBtn">Share with RELAY</button>
+</details>
+<details>
+  <summary>Demo shortcuts</summary>
+  <div class="row">
+    <button data-say="RELAY, stay with me. The clerk wants me to register and upload my insurance card.">Start: “stay with me”</button>
+    <button data-say="https://demo-clinic.example/register">Scan clinic QR</button>
+    <button data-say="https://evil-example.net/register">Scan wrong QR</button>
+    <button data-say="actually my phone number changed">“my phone changed”</button>
+    <button data-say="pay $350 now">“pay $350 now”</button>
+    <button data-say="continue">“continue”</button>
+    <button data-say="start over">“start over”</button>
+  </div>
+</details>
+<script>
+(function () {
+  const $ = (id) => document.getElementById(id);
+  let sid = null, last = null;
+
+  async function api(path, body, method) {
+    const r = await fetch(path, { method: method || "POST", headers: { "content-type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+    return r.json();
+  }
+  function log(role, text) {
+    const d = document.createElement("div");
+    d.className = "msg " + role;
+    d.textContent = text;
+    $("log").appendChild(d);
+    d.scrollIntoView({ block: "end" });
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+
+  async function start() {
+    $("log").innerHTML = "";
+    $("proposal").hidden = true;
+    $("receipt").hidden = true;
+    const s = await api("/api/sessions", { user_id: "demo-evelyn" });
+    sid = s.session_id;
+    render(s.opening);
+    api("/api/agents", null, "GET").then((a) => {
+      const live = a.agents.find((x) => x.id === "openai-default");
+      $("provider").textContent = "model: " + a.provider.model + " @ " + a.provider.endpoint + " (" + (live ? live.health : "?") + ")";
+    });
+  }
+  async function send(type, content, fieldHint, shown) {
+    if (!sid) return;
+    log("user", shown || (type === "image" ? "[photo]" : type === "document" ? "[shared] " + content : content));
+    const r = await api("/api/sessions/" + sid + "/observations", { observation_type: type, content: content, field_hint: fieldHint });
+    render(r);
+  }
+  async function confirm(decision) {
+    const p = last.action_proposal;
+    log("user", decision === "confirm" ? "Yes, submit it" : "No, not now");
+    const r = await api("/api/actions/" + p.action_id + "/confirm", { session_id: sid, payload_hash: p.payload_hash, decision: decision });
+    render(r);
+  }
+
+  function render(r) {
+    last = r;
+    if (r.error) { log("relay", "Error: " + r.error); return; }
+    if (r.assistant_message) log("relay", r.assistant_message + (r.degraded ? "  (limited mode)" : ""));
+    $("state").textContent = r.state;
+    if (r.step) { $("step").hidden = false; $("step").textContent = "step " + r.step.index + " of " + r.step.total + ": " + r.step.label; }
+    else $("step").hidden = true;
+
+    const prop = $("proposal");
+    if (r.action_proposal) {
+      const p = r.action_proposal;
+      prop.innerHTML = "<h2>Review before submitting to " + esc(p.target) + " (tier " + p.risk_tier + ", " + esc(p.verdict) + ")</h2><ul>" +
+        p.payload_summary.map((l) => "<li>" + esc(l) + "</li>").join("") + "</ul><p class=\"muted\">Sensitive: " + esc(p.sensitive_fields.join(", ") || "none") + "</p>";
+      prop.hidden = false;
+    } else prop.hidden = true;
+
+    const rec = $("receipt");
+    if (r.receipt) {
+      rec.innerHTML = "<h2>Receipt</h2><p>" + esc(r.receipt.summary) + "</p>" +
+        (r.receipt.confirmation_code ? "<p><strong>Confirmation: " + esc(r.receipt.confirmation_code) + "</strong></p>" : "") +
+        (r.receipt.follow_up ? "<p class=\"muted\">" + esc(r.receipt.follow_up) + "</p>" : "");
+      rec.hidden = false;
+    }
+    renderInput(r);
+  }
+
+  function renderInput(r) {
+    const box = $("input");
+    box.innerHTML = "";
+    if (r.next_input === "choice") {
+      r.choices.forEach((c) => {
+        const b = document.createElement("button");
+        b.textContent = c.label + (c.note ? " · " + c.note : "");
+        b.onclick = () => send("voice", c.id, undefined, c.label);
+        box.appendChild(b);
+      });
+      box.appendChild(textRow("Or say it…"));
+    } else if (r.next_input === "confirm") {
+      const y = document.createElement("button"); y.className = "primary"; y.textContent = "Confirm and submit"; y.onclick = () => confirm("confirm");
+      const n = document.createElement("button"); n.textContent = "Not now"; n.onclick = () => confirm("reject");
+      box.append(y, n);
+      box.appendChild(textRow("Or say yes, no, or what to change…"));
+    } else if (r.next_input === "camera") {
+      const lbl = document.createElement("label");
+      lbl.textContent = "Take or choose a photo: ";
+      const f = document.createElement("input");
+      f.type = "file"; f.accept = "image/*"; f.setAttribute("capture", "environment");
+      f.onchange = () => f.files[0] && fileToDataUrl(f.files[0]).then((u) => send("image", u, r.field, "[photo from camera]"));
+      lbl.appendChild(f);
+      const demo = document.createElement("button"); demo.textContent = "Use sample card photo"; demo.onclick = () => send("image", "fixture:" + r.field, r.field, "[sample card photo]");
+      const bad = document.createElement("button"); bad.textContent = "Blurry photo"; bad.onclick = () => send("image", "fixture:unreadable", r.field, "[blurry photo]");
+      const row = document.createElement("div"); row.className = "row"; row.append(demo, bad);
+      box.append(lbl, row);
+      box.appendChild(textRow("Or say something…"));
+    } else if (r.next_input === "none") {
+      const b = document.createElement("button"); b.textContent = "Start a new session"; b.onclick = start;
+      box.appendChild(b);
+    } else {
+      box.appendChild(textRow("Say or type…"));
+    }
+  }
+
+  function textRow(placeholder) {
+    const row = document.createElement("div"); row.className = "row";
+    const i = document.createElement("input"); i.type = "text"; i.placeholder = placeholder; i.setAttribute("aria-label", placeholder);
+    const go = document.createElement("button"); go.className = "primary"; go.textContent = "Send";
+    const fire = () => { const v = i.value.trim(); if (v) { i.value = ""; send("voice", v); } };
+    go.onclick = fire;
+    i.onkeydown = (e) => { if (e.key === "Enter") fire(); };
+    row.append(i, go);
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SR) {
+      const m = document.createElement("button"); m.textContent = "🎤 Speak";
+      m.onclick = () => {
+        const rec = new SR(); rec.lang = "en-US";
+        m.classList.add("listening"); m.textContent = "● Listening…";   // recording state is never hidden
+        rec.onresult = (e) => send("voice", e.results[0][0].transcript);
+        rec.onend = () => { m.classList.remove("listening"); m.textContent = "🎤 Speak"; };
+        rec.onerror = rec.onend;
+        rec.start();
+      };
+      row.appendChild(m);
+    }
+    setTimeout(() => i.focus(), 0);
+    return row;
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((res, rej) => {
+      const img = new Image(); const url = URL.createObjectURL(file);
+      img.onload = () => {
+        const max = 1024, s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement("canvas"); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        res(c.toDataURL("image/jpeg", 0.85));
+      };
+      img.onerror = rej; img.src = url;
+    });
+  }
+
+  $("stop").onclick = () => send("voice", "stop");
+  $("new").onclick = start;
+  $("shareBtn").onclick = () => { const v = $("share").value.trim(); if (v) { $("share").value = ""; send("document", v); } };
+  document.querySelectorAll("[data-say]").forEach((b) => { b.onclick = () => send("voice", b.dataset.say); });
+  start();
+})();
+</script>
+</body>
+</html>

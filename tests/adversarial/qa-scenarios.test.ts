@@ -1,3 +1,4 @@
+import { cancelProposal } from "@/lib/session/store";
 import { describe, expect, it, beforeEach, afterEach } from "vitest";
 import { normalize } from "@/lib/agents/normalize";
 import { hermesAdapter, localFallbackAdapter } from "@/lib/agents/adapters";
@@ -392,19 +393,17 @@ describe("QA Case 11 — User changes mind (cancel submit)", () => {
     expect(result.error).toContain("confirmation");
   });
 
-  it("pending proposal remains server-side after client-side cancel (gap)", async () => {
+  it("server-side cancel clears the pending proposal (gap closed by Builder 2)", async () => {
     const { session } = createSession({ demo: true });
     const sessionId = session.sessionId;
     observeSession(sessionId, { type: "qr", value: "clinic" });
     await completeRegistrationInputs(sessionId);
     const { proposal } = (await proposeRegistration(sessionId))!;
 
-    const recordBefore = getSession(sessionId)!;
-    expect(recordBefore.pendingProposal?.action_id).toBe(proposal.action_id);
-
-    // UI cancelSubmit clears client state only — no server cancel-proposal API.
-    const stillPending = getSession(sessionId)!;
-    expect(stillPending.pendingProposal).not.toBeNull();
+    expect(getSession(sessionId)!.pendingProposal?.action_id).toBe(proposal.action_id);
+    cancelProposal(proposal.action_id);
+    expect(getSession(sessionId)!.pendingProposal).toBeNull();
+    expect(executeAction(proposal.action_id)).toBeNull();
   });
 });
 

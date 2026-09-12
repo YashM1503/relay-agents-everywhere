@@ -112,6 +112,10 @@ export interface AgentRequest {
   costPreference?: CostPreference;
   prompt: string;
   metadata?: Record<string, unknown>;
+  /** Images (data: URLs) for vision-capable agents. Sent only to the adapter that runs. */
+  attachments?: Array<{ type: "image"; dataUrl: string; label?: string }>;
+  /** Hard timeout for one adapter call, in milliseconds. */
+  timeoutMs?: number;
 }
 
 export interface AgentRegistryEntry {

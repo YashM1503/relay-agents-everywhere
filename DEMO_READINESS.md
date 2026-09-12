@@ -52,3 +52,14 @@ Open `http://localhost:3000?demo=true` → **Stay with me**
 ## Feature freeze
 
 Architecture frozen. No Python/SQLite adoption. Hero path only.
+
+## Builder 2 additions (post-freeze, additive, hero path unchanged)
+
+| Item | Status | Notes |
+|------|--------|-------|
+| Server-side cancel of pending proposal | **PASS** | `POST /api/actions/:id/cancel`, wired to the COUNTERSIGN "Not yet" flow (QA case 11 closed) |
+| HOLD / DENY not overridable by Submit | **PASS** | `executeAction` refuses while proof obligations are unmet |
+| Agent execution with fallback + timeouts | **PASS** | `runWithFallback`; router decisions are now acted on |
+| Provider-agnostic adapter (OpenAI / OpenRouter / Ollama) | **PASS (unit)** | Live call unverified until a key is available |
+| Live card OCR (`RELAY_LIVE_VISION=true`) | **PASS (unit)** | Off by default; name mismatch → contradiction → hold |
+| Shared payment message left untouched | **PASS** | `observe` with `type: "message"` |

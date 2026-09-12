@@ -5,6 +5,7 @@ import type {
   TaskState,
 } from "@/lib/countersign/types";
 import { dispatch } from "@/lib/router/dispatch";
+import { runWithFallback } from "@/lib/agents/execute";
 import type { AgentRequest, RelayContext } from "@/lib/agents/types";
 import {
   addAppointment,
@@ -259,12 +260,30 @@ export function deleteSession(sessionId: string): boolean {
   return sessions.delete(sessionId);
 }
 
+const MONEY_REQUEST = /\$\s?\d+|\b\d+\s?(dollars|usd|bucks)\b|\b(pay|payment|send money|transfer|wire|venmo|zelle|gift card)\b/i;
+
+/** A message the user shared with RELAY (forwarded text, screenshot text). Untrusted data. */
+function observeSharedMessage(record: SessionRecord, value: string): SessionRecord {
+  if (MONEY_REQUEST.test(value)) {
+    record.lastToolError =
+      "This message asks for money and does not match the registration we are completing. I left it untouched. If you like, I can help you verify it with the clinic.";
+    pushDebug(record, "countersign", "Payment request left untouched", value.slice(0, 80));
+  } else {
+    pushDebug(record, "observation", "Shared message noted", "Not acted on");
+  }
+  return record;
+}
+
 export function observeSession(
   sessionId: string,
   observation: { type: string; value?: string },
 ): SessionRecord | null {
   const record = sessions.get(sessionId);
   if (!record) return null;
+
+  if (observation.type === "message" || observation.type === "document") {
+    return observeSharedMessage(record, observation.value ?? "");
+  }
 
   record.machineState = "OBSERVE";
   pushDebug(
@@ -601,6 +620,18 @@ export function executeAction(actionId: string): {
       loadUserProfile().action_policy,
     );
 
+    // A hold or deny is never overridden by tapping Submit. Confirmation resolves "confirm" only;
+    // unmet proof obligations (destination, contradictions, missing fields) must be fixed first.
+    if (decision.verdict === "hold" || decision.verdict === "deny") {
+      record.lastToolError = decision.explanation;
+      pushDebug(
+        record,
+        "countersign",
+        "Execution refused",
+        decision.unresolved.join("; ") || decision.explanation,
+      );
+      return { record, success: false, error: decision.explanation };
+    }
     if (decision.verdict !== "allow" && proposal.user_confirmed !== true) {
       return { record, success: false, error: decision.explanation };
     }
@@ -727,4 +758,114 @@ export function pauseSession(sessionId: string, paused: boolean): SessionRecord 
   if (!record) return null;
   record.session.status = paused ? "paused" : "active";
   return record;
+}
+
+
+// ---- Builder 2: proposal cancel, live vision, provider status -----------------------------------
+
+/** Server-side cancel of a pending proposal (QA case 11). Nothing is shared; the session continues. */
+export function cancelProposal(actionId: string): SessionRecord | null {
+  for (const record of sessions.values()) {
+    if (record.pendingProposal?.action_id !== actionId) continue;
+    record.pendingProposal = null;
+    record.countersignDecision = null;
+    record.userConfirmed = false;
+    record.machineState = "ASSIST";
+    record.session.state = "ASSIST";
+    pushDebug(record, "countersign", "Submission cancelled", "Pending proposal cleared; nothing was shared");
+    return record;
+  }
+  return null;
+}
+
+export function isLiveVisionEnabled(): boolean {
+  return process.env.RELAY_LIVE_VISION === "true";
+}
+
+function nameKey(s: string): string {
+  return s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
+}
+
+export type VisionEnrichment = {
+  record: SessionRecord;
+  used: "live" | "synthetic";
+  agentId: string;
+  contradiction?: string;
+};
+
+/**
+ * Read a captured card photo with the routed vision agent and replace the synthetic OCR values.
+ * Falls back to the synthetic card when no live agent is available or nothing legible came back.
+ * A card name that differs from the profile is recorded as a contradiction: COUNTERSIGN will hold.
+ */
+export async function enrichCaptureWithVision(
+  sessionId: string,
+  side: "front" | "back",
+  image: string,
+  run: typeof runWithFallback = runWithFallback,
+): Promise<VisionEnrichment | null> {
+  const record = sessions.get(sessionId);
+  if (!record) return null;
+
+  const request: AgentRequest = {
+    taskType: "extract_document",
+    requiredCapabilities: ["vision"],
+    requiredModalities: ["text", "image"],
+    prompt:
+      side === "front"
+        ? "Read the FRONT of an insurance card. Return findings with keys member_name, member_id, plan, group. Only include values that are clearly legible."
+        : "Read the BACK of an insurance card. Return findings with keys rx_bin, customer_service_phone. Only include values that are clearly legible.",
+    attachments: [{ type: "image", dataUrl: image, label: `insurance_${side}` }],
+    timeoutMs: 20_000,
+  };
+  const context: RelayContext = {
+    userPreferences: {},
+    currentEnvironment: [{ type: "image", source: "phone" }],
+    currentTask: {
+      taskId: record.task.task_id,
+      goal: record.task.goal,
+      status: record.task.status,
+      unresolvedFields: record.task.unresolved_fields,
+    },
+    conversationContext: [],
+    connectedSources: [],
+    permissions: {},
+  };
+
+  const { result, agentId, attempts } = await run(request, context);
+  const findings = Object.fromEntries(result.findings.map((f) => [f.key, f.value]));
+  const legible = side === "front" ? Boolean(findings.member_id) : Boolean(findings.rx_bin);
+
+  if (result.status !== "completed" || agentId === "local-fallback" || agentId === "none" || !legible) {
+    pushDebug(record, "agent", `Card ${side}: synthetic values`, attempts.join(" | ") || `${agentId}: ${result.summary}`);
+    return { record, used: "synthetic", agentId };
+  }
+
+  record.selectedAgentId = agentId;
+  if (side === "front") {
+    if (findings.member_id) record.task.known_fields.member_id = findings.member_id;
+    if (findings.plan) record.task.known_fields.plan = findings.plan;
+    if (findings.group) record.task.known_fields.group = findings.group;
+  } else if (findings.rx_bin) {
+    record.task.known_fields.rx_bin = findings.rx_bin;
+  }
+  pushDebug(
+    record,
+    "agent",
+    `Card ${side} read by ${agentId}`,
+    Object.entries(findings).map(([k, v]) => `${k}=${v}`).join(" · "),
+  );
+
+  let contradiction: string | undefined;
+  const profileName = loadUserProfile().display_name;
+  if (side === "front" && findings.member_name && nameKey(findings.member_name) !== nameKey(profileName)) {
+    contradiction = `The card says "${findings.member_name}" but your profile says "${profileName}".`;
+    record.task.contradictions = [
+      ...(record.task.contradictions ?? []).filter((c) => c.field !== "full_name"),
+      { field: "full_name", sources: [`profile: ${profileName}`, `card: ${findings.member_name}`] },
+    ];
+    record.lastToolError = `${contradiction} Please check with the desk before I submit anything.`;
+    pushDebug(record, "countersign", "Name mismatch", contradiction);
+  }
+  return { record, used: "live", agentId, contradiction };
 }
