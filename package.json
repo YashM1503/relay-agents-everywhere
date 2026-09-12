@@ -20,6 +20,7 @@
     "ios:demo": "bash scripts/ios-demo.sh",
     "ios:preflight": "bash scripts/ios-demo.sh preflight",
     "ios:sync": "bash scripts/ios-demo.sh sync",
+    "ios:ipa": "bash scripts/build-ios-ipa.sh",
     "ios:verify-secrets": "bash scripts/verify-ios-no-secrets.sh"
   },
   "dependencies": {

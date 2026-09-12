@@ -14,11 +14,10 @@ deployments as experimental.
 If you discover a security issue, please report it responsibly:
 
 1. **Do not** open a public GitHub issue for exploitable vulnerabilities.
-2. Email **yashmisra1503@gmail.com** with:
-   - A description of the issue
-   - Steps to reproduce
-   - Impact assessment (if known)
+2. Email **yashmisra1503@gmail.com** with a description, steps to reproduce, and impact assessment (if known).
 3. Allow reasonable time for a response before public disclosure.
+
+Never commit `.env.local`, `.env.local.save`, or any file containing API keys. Rotate keys immediately if they appear in git history or shared artifacts (including `.ipa` builds).
 
 We will acknowledge receipt within a few business days and work with you on a
 fix or mitigation where appropriate.

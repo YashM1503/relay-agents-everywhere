@@ -116,7 +116,33 @@ curl -s "$CAPACITOR_SERVER_URL/api/health" | python3 -m json.tool
 
 ---
 
-## 6. Open in Xcode
+## 6. Build an installable `.ipa` (iOS equivalent of APK)
+
+On macOS with Xcode and signing configured:
+
+```bash
+# Required: stable backend URL + your Apple Developer Team ID (10 chars)
+CAPACITOR_SERVER_URL=https://your-relay.example.com \
+IOS_TEAM_ID=XXXXXXXXXX \
+npm run ios:ipa
+```
+
+Output: **`build/ios/RELAY.ipa`** (~650 KB shell — the web app loads from your server).
+
+| Export method | Command | Who can install |
+|---------------|---------|-----------------|
+| Development (default) | set env vars above, then `npm run ios:ipa` | Devices registered to your Apple Developer team |
+| Ad-hoc | add `IOS_EXPORT_METHOD=ad-hoc` (HTTPS host only) | Up to 100 registered device UDIDs |
+
+IPA builds **reject** localhost and ephemeral tunnel URLs (`*.lhr.life`, ngrok, etc.) so distributable binaries do not embed dev infrastructure.
+
+Install via **Xcode → Window → Devices and Simulators** (drag the `.ipa` onto your iPhone), or Apple Configurator.
+
+> Unlike Android APK sideloading, iOS requires Apple code signing. Free Apple IDs work for your own devices via Xcode; sharing widely needs ad-hoc or TestFlight.
+
+---
+
+## 7. Open in Xcode
 
 ```bash
 npm run cap:open:ios
@@ -126,19 +152,19 @@ Opens `ios/App/App.xcodeproj`.
 
 ---
 
-## 7. Configure signing
+## 8. Configure signing
 
 1. Select the **App** target in Xcode
 2. **Signing & Capabilities**
 3. Check **Automatically manage signing**
-4. Choose your **Team** (Apple ID)
+4. Choose your **Team** (Apple ID) — the repo does not commit a `DEVELOPMENT_TEAM`
 5. Confirm **Bundle Identifier:** `ai.relay.demo`
 
 If the bundle ID conflicts, change it only in Xcode and `capacitor.config.ts` together — do not fork the web app.
 
 ---
 
-## 8. Connect iPhone and run
+## 9. Connect iPhone and run
 
 1. Plug iPhone into Mac; unlock and trust the computer
 2. Select your **iPhone** as the run destination (not a simulator)
@@ -150,7 +176,7 @@ First launch loads RELAY from your Mac's IP. You should see the familiar Home sc
 
 ---
 
-## 9. Demo path on device
+## 10. Demo path on device
 
 1. Tap **Stay with me**
 2. Complete guided questions
@@ -163,7 +189,7 @@ Pause / Stop remain available throughout.
 
 ---
 
-## 10. Reset demo
+## 11. Reset demo
 
 - Pull to refresh is not required — start a new session from Home
 - Or restart the app
@@ -171,7 +197,7 @@ Pause / Stop remain available throughout.
 
 ---
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Problem | Fix |
 |---------|-----|
@@ -197,7 +223,7 @@ npm run build
 
 ---
 
-## 12. What not to do
+## 13. What not to do
 
 - Do not embed OpenRouter/OpenAI keys in Swift, plist, or `capacitor.config.json`
 - Do not static-export Next.js for this demo (API routes would break)
@@ -214,4 +240,5 @@ npm run build
 | `ios/App/` | Xcode project (SPM) |
 | `src/lib/agents/adapters/openrouter.ts` | Server-side OpenRouter adapter |
 | `scripts/cap-sync-ios.sh` | Sync with backend URL |
+| `scripts/build-ios-ipa.sh` | Build signed `.ipa` for device install |
 | `scripts/verify-ios-no-secrets.sh` | Pre-demo secret scan |
