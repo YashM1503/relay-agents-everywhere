@@ -53,6 +53,16 @@ bash scripts/runtime-integration.sh   # full API path (dev server must be runnin
 Host Next.js on your Mac, sync the shell to your LAN IP, and run from Xcode.
 See [IOS_DEMO_SETUP.md](./IOS_DEMO_SETUP.md).
 
+### Production deploy
+
+```bash
+npm run deploy:check
+./scripts/start-production.sh
+# or: docker compose up --build -d
+```
+
+Full guide: [DEPLOYMENT.md](./DEPLOYMENT.md)
+
 ---
 
 ## What's in the repo

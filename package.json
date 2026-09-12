@@ -8,6 +8,8 @@
     "dev:mobile": "next dev -H 0.0.0.0 -p 3000",
     "build": "next build",
     "start": "next start",
+    "start:prod": "next start -p ${PORT:-3000} -H ${HOST:-0.0.0.0}",
+    "deploy:check": "npm run typecheck && npm test && npm run build",
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",

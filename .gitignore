@@ -1,6 +1,7 @@
 # Environment and secrets
 .env
 .env.local
+.env.local.save
 .env.*.local
 .env.development.local
 .env.test.local

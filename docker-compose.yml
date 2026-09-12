@@ -1,0 +1,32 @@
+services:
+  relay:
+    build:
+      context: .
+      args:
+        NEXT_PUBLIC_RELAY_APP_MODE: production
+        NEXT_PUBLIC_DEMO_MODE: "false"
+    ports:
+      - "3000:3000"
+    environment:
+      RELAY_APP_MODE: production
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL_GENERAL: ${OPENAI_MODEL_GENERAL:-gpt-4o-mini}
+      OPENAI_MODEL_VISION: ${OPENAI_MODEL_VISION:-gpt-4o-mini}
+      OPENAI_TRANSCRIPTION_MODEL: ${OPENAI_TRANSCRIPTION_MODEL:-whisper-1}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL_GENERAL: ${OPENROUTER_MODEL_GENERAL:-}
+      OPENROUTER_MODEL_VISION: ${OPENROUTER_MODEL_VISION:-}
+      RELAY_LIVE_VISION: ${RELAY_LIVE_VISION:-false}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

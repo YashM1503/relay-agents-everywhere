@@ -1,0 +1,17 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*
+!.env.example
+*.md
+!README.md
+coverage
+ios
+runtime
+terminals
+.cursor
+.DS_Store
+*.log
+tsconfig.tsbuildinfo
